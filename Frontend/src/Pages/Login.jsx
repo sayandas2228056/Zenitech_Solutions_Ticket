@@ -85,8 +85,8 @@ const Login = () => {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <a href="/">
-              <h1 className="text-3xl font-bold text-[#92400e] mb-2">
-                Zenitech Solutions
+              <h1 className="text-3xl font-bold mb-2">
+                <span className='text-orange-500'>Zenitech</span> <span className='text-b'>Solutions</span>
               </h1>
             </a>
             <h2 className="text-4xl text-[#92400e] font-semibold">Welcome Back</h2>

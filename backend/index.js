@@ -6,13 +6,8 @@ const path = require('path');
 
 // Import routes
 const authRoutes = require('./src/routes/auth');
-const interviewRoutes = require('./src/routes/interview');
-const resumeRoutes = require('./src/routes/resumeRoutes');
 const profileRoutes = require('./src/routes/profile');
-const feedbackRoutes = require('./src/routes/feedback');
-const interviewPrepRoutes = require('./src/routes/interviewPrep');
-const mockTestRoutes = require('./src/routes/mockTest');
-
+const ticketRoutes = require('./src/routes/ticket');
 const app = express();
 
 // CORS configuration
@@ -27,15 +22,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Create uploads directory if it doesn't exist
-const fs = require('fs');
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(uploadsDir));
 
 // Connect to MongoDB with retry logic
 const connectWithRetry = async () => {
@@ -50,6 +36,8 @@ const connectWithRetry = async () => {
 };
 
 connectWithRetry();
+
+app.use('/api/tickets',ticketRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -68,11 +56,6 @@ app.get('/',(req,res)=>{
 // Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/interview', interviewRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/resume', resumeRoutes);
-app.use('/api/interview-prep', interviewPrepRoutes);
-app.use('/api/mock-test', mockTestRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res, next) => {

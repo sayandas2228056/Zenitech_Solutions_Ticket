@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, ChevronDown, User, LogOut, Settings, Bell } from 'lucide-react';
+import { Menu, X, ChevronDown, User, LogOut } from 'lucide-react';
 import logo from '../assets/Logo.jpg';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -112,8 +112,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 h-16 md:h-18">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 min-w-[140px] md:min-w-[180px] group">
-          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-orange-100 group-hover:ring-orange-200 transition-all duration-300 shadow-sm">
-            <img src={logo} alt="Zenitech Solutions" className="h-full w-full object-cover" />
+          <div className="h-8 md:h-10 flex items-center justify-center">
+            <img 
+              src={logo} 
+              alt="Zenitech Solutions" 
+              className="h-full w-auto object-contain transition-all duration-300"
+            />
           </div>
           <div className="zenitech-brand text-orange-600 font-bold whitespace-nowrap group-hover:text-orange-700 transition-colors duration-300">
             Zenitech <span className='text-blue-700 group-hover:text-blue-800'>Solutions</span>
@@ -148,28 +152,6 @@ const Navbar = () => {
                   />
                   <span className="apple-underline" />
                 </button>
-                
-                <div 
-                  className={`apple-dropdown absolute top-full left-1/2 -translate-x-1/2 bg-white/95 shadow-2xl rounded-2xl py-4 min-w-[280px] mt-2 border border-slate-200/50 transition-all duration-300 ${
-                    activeDropdown === item.name || hoveredDropdown === item.name
-                      ? 'opacity-100 visible translate-y-0'
-                      : 'opacity-0 invisible -translate-y-4'
-                  }`}
-                >
-                  {item.dropdown.map((sub, index) => (
-                    <a
-                      key={sub.name}
-                      href={sub.link}
-                      className="block px-6 py-3 text-sm text-slate-700 hover:bg-blue-50/80 hover:text-blue-600 transition-all duration-200 mx-2 rounded-xl"
-                      onClick={() => setActiveDropdown(null)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="w-2 h-2 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full opacity-70"></span>
-                        {sub.name}
-                      </div>
-                    </a>
-                  ))}
-                </div>
               </div>
             ) : (
               <a
@@ -190,7 +172,6 @@ const Navbar = () => {
         <div className="flex items-center gap-3 min-w-[40px] md:min-w-[200px] justify-end">
           {user ? (
             <div className="hidden md:flex items-center gap-3">
-
               {/* Profile Dropdown */}
               <div className="relative" ref={profileMenuRef}>
                 <button
@@ -229,8 +210,6 @@ const Navbar = () => {
                     <User size={16} />
                     View Profile
                   </button>
-                  
-                  
                   
                   <div className="border-t border-slate-100 mt-2 pt-2">
                     <button
@@ -311,25 +290,6 @@ const Navbar = () => {
                       size={18}
                     />
                   </button>
-                  <div 
-                    className={`overflow-hidden transition-all duration-300 ${
-                      activeDropdown === item.name ? 'max-h-96 pb-4' : 'max-h-0'
-                    }`}
-                  >
-                    <div className="pl-4 space-y-1">
-                      {item.dropdown.map((sub) => (
-                        <a
-                          key={sub.name}
-                          href={sub.link}
-                          className="flex items-center gap-3 py-3 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50/80 px-4 rounded-xl transition-all duration-200"
-                          onClick={toggleMobileMenu}
-                        >
-                          <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                          {sub.name}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <a
@@ -434,42 +394,6 @@ const Navbar = () => {
           .zenitech-brand {
             font-size: 1.25rem;
           }
-        }
-        
-        /* Custom scrollbar */
-        .apple-mobile-menu::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        .apple-mobile-menu::-webkit-scrollbar-track {
-          background: rgba(241, 245, 249, 0.5);
-          border-radius: 3px;
-        }
-        
-        .apple-mobile-menu::-webkit-scrollbar-thumb {
-          background: rgba(203, 213, 225, 0.8);
-          border-radius: 3px;
-          transition: background 0.3s ease;
-        }
-        
-        .apple-mobile-menu::-webkit-scrollbar-thumb:hover {
-          background: rgba(148, 163, 184, 0.9);
-        }
-        
-        
-        /* Smooth hover animations */
-        .apple-nav-link {
-          transform-origin: center;
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        /* Enhanced shadows */
-        .apple-dropdown,
-        [class*="shadow-2xl"] {
-          box-shadow: 
-            0 32px 64px -12px rgba(0, 0, 0, 0.15),
-            0 20px 25px -5px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
         }
       `}</style>
     </nav>
