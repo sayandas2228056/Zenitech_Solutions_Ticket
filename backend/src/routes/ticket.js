@@ -1,5 +1,6 @@
 const express = require("express");
 const Ticket = require("../models/Ticket");
+const { sendTicketConfirmation } = require("../services/emailService");
 const router = express.Router();
 
 // Function to generate Token ID
@@ -23,8 +24,13 @@ router.post("/", async (req, res) => {
     const token = generateToken();
     const ticket = new Ticket({ ...req.body, token });
     await ticket.save();
+    
+    // Send email notification (don't await to avoid delaying the response)
+    sendTicketConfirmation(ticket).catch(console.error);
+    
     res.json({ success: true, ticket });
   } catch (err) {
+    console.error('Error creating ticket:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

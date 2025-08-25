@@ -16,6 +16,9 @@ module.exports = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h',
   
   // Email configuration
+  EMAIL_USER: process.env.EMAIL_USER || 'offcsayantubecode@gmail.com',
+  EMAIL_PASS: process.env.EMAIL_PASS,  // App Password for Gmail
+  EMAIL_FROM: process.env.EMAIL_FROM || 'offcsayantubecode@gmail.com',
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,
