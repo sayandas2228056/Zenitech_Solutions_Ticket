@@ -1,7 +1,11 @@
 const express = require("express");
 const Ticket = require("../models/Ticket");
 const { sendTicketConfirmation } = require("../services/emailService");
+const { authenticateToken, checkRole } = require("../middleware/auth");
 const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authenticateToken);
 
 // Function to generate Token ID
 function generateToken() {
@@ -19,16 +23,38 @@ function generateToken() {
 }
 
 // POST → Create Ticket
-router.post("/", async (req, res) => {
+router.post("/", checkRole(['admin', 'support', 'user']), async (req, res) => {
   try {
     const token = generateToken();
-    const ticket = new Ticket({ ...req.body, token });
+    const userId = req.user.userId || req.user._id; // Handle both userId and _id
+    
+    console.log('Creating new ticket for user:', userId);
+    console.log('Request body:', req.body);
+    
+    const ticket = new Ticket({ 
+      ...req.body,
+      token,
+      userId: userId.toString() // Ensure userId is a string
+    });
+    
+    console.log('New ticket data:', ticket);
+    
     await ticket.save();
+    console.log('Ticket saved successfully:', ticket._id);
     
     // Send email notification (don't await to avoid delaying the response)
-    sendTicketConfirmation(ticket).catch(console.error);
+    sendTicketConfirmation(ticket).catch(err => {
+      console.error('Error sending email:', err);
+    });
     
-    res.json({ success: true, ticket });
+    res.json({ 
+      success: true, 
+      ticket: {
+        ...ticket.toObject(),
+        // Ensure we're sending back the correct userId
+        userId: ticket.userId.toString()
+      }
+    });
   } catch (err) {
     console.error('Error creating ticket:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -36,17 +62,61 @@ router.post("/", async (req, res) => {
 });
 
 // GET → Get all Tickets
-router.get("/", async (req, res) => {
+router.get("/", checkRole(['admin', 'support', 'user']), async (req, res) => {
   try {
-    const tickets = await Ticket.find().sort({ createdAt: -1 });
-    res.json(tickets);
+    console.log('=== TICKET REQUEST ===');
+    const userId = req.user.userId || req.user._id;
+    console.log('User making request:', {
+      userId: userId,
+      role: req.user.role,
+      allUserData: req.user
+    });
+    
+    let query = {};
+    
+    // Regular users can only see their own tickets
+    if (req.user.role === 'user') {
+      query.userId = userId.toString();
+      console.log(`Filtering tickets for user ID: ${userId}`);
+    } else {
+      console.log('Admin/Support: Showing all tickets');
+    }
+    
+    console.log('MongoDB query:', JSON.stringify(query, null, 2));
+    
+    // Convert query.userId to string to match stored format
+    if (query.userId) {
+      query.userId = query.userId.toString();
+    }
+    
+    const tickets = await Ticket.find(query).sort({ createdAt: -1 }).lean();
+    
+    console.log(`Found ${tickets.length} tickets`);
+    if (tickets.length > 0) {
+      console.log('Sample ticket:', {
+        _id: tickets[0]._id,
+        userId: tickets[0].userId,
+        status: tickets[0].status,
+        subject: tickets[0].subject
+      });
+    }
+    
+    // Ensure all userIds are strings in the response
+    const sanitizedTickets = tickets.map(ticket => ({
+      ...ticket,
+      userId: ticket.userId ? ticket.userId.toString() : null
+    }));
+    
+    console.log('Sending response with tickets:', sanitizedTickets.length);
+    res.json(sanitizedTickets);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error fetching tickets:', err);
+    res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
 
 // PATCH → Update Ticket Status
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", checkRole(['admin', 'support']), async (req, res) => {
   try {
     const { status } = req.body;
     if (!status || !['Open', 'In Progress', 'Closed'].includes(status)) {
@@ -70,7 +140,7 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 // DELETE → Delete a Ticket
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", checkRole(['admin', 'support']), async (req, res) => {
   try {
     const ticket = await Ticket.findByIdAndDelete(req.params.id);
     if (!ticket) {
@@ -78,7 +148,8 @@ router.delete("/:id", async (req, res) => {
     }
     res.json({ success: true, message: 'Ticket deleted successfully' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error('Error deleting ticket:', err);
+    res.status(500).json({ success: false, error: 'Failed to delete ticket' });
   }
 });
 

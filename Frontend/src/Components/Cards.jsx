@@ -73,9 +73,20 @@ const Cards = ({ tickets, deletingId, onDelete }) => {
                 <div className={`w-4 h-4 rounded-full ${getPriorityColor(ticket.priority || 'medium')} shadow-lg`}></div>
               </div>
               <h3 className="font-bold text-xl mb-2 leading-tight line-clamp-2">{ticket.subject}</h3>
-              <div className="flex items-center gap-2 text-orange-100">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">Support Request</span>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2 text-orange-100">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm">Support Request</span>
+                </div>
+                <div className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                  {new Date(ticket.createdAt).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
               </div>
             </div>
           </div>

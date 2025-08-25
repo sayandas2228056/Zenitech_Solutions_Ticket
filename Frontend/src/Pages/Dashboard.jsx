@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Ticket, Clock, RefreshCw, Search, Filter } from "lucide-react";
+import { Ticket, Clock, RefreshCw, Search, Filter, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Cards from "../Components/Cards";
+import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,14 +15,51 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState("All");
 
   const fetchTickets = async () => {
+    if (!user) {
+      setError("User not authenticated");
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:3000/api/tickets");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
       }
+
+      console.log('Fetching tickets for user:', user); // Debug log
+      
+      const response = await fetch("http://localhost:3000/api/tickets", {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      if (response.status === 401) {
+        console.log('Unauthorized - logging out');
+        logout();
+        navigate('/login');
+        return;
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Server error:', errorData);
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setTickets(data);
+      console.log('Tickets received:', data); // Debug log
+      
+      // The backend now handles filtering, but we'll do a client-side check as well
+      const filteredTickets = data;
+      
+      setTickets(filteredTickets);
       setError(null);
     } catch (err) {
       console.error("Error fetching tickets:", err);
@@ -28,16 +69,58 @@ const Dashboard = () => {
     }
   };
 
+  // Function to refresh tickets
+  const refreshTickets = () => {
+    if (user) {
+      fetchTickets();
+    }
+  };
+
+  // Set up a listener for the popstate event to detect when user navigates back
   useEffect(() => {
-    fetchTickets();
-  }, []);
+    const handlePopState = () => {
+      if (window.location.pathname === '/dashboard') {
+        refreshTickets();
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user]);
+
+  // Initial fetch and setup
+  useEffect(() => {
+    // Only fetch tickets if user is authenticated
+    if (user) {
+      fetchTickets();
+      
+      // Also check for a refresh flag in session storage
+      const shouldRefresh = sessionStorage.getItem('shouldRefreshTickets');
+      if (shouldRefresh) {
+        fetchTickets();
+        sessionStorage.removeItem('shouldRefreshTickets');
+      }
+    } else {
+      // If no user is found, redirect to login
+      navigate('/login');
+    }
+  }, [user]);
 
   const handleDelete = async (ticketId) => {
     if (window.confirm("Are you sure you want to delete this ticket?")) {
       try {
         setDeletingId(ticketId);
+        const token = localStorage.getItem('token');
         const response = await fetch(`http://localhost:3000/api/tickets/${ticketId}`, {
           method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -62,6 +145,12 @@ const Dashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Redirect to login if not authenticated
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center">
@@ -82,16 +171,26 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-orange-200 max-w-md text-center">
           <div className="w-20 h-20 bg-gradient-to-r from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Ticket className="w-10 h-10 text-red-500" />
+            <AlertCircle className="w-10 h-10 text-red-500" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Connection Error</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">{error}</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h3>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            {error === 'Forbidden' 
+              ? 'You do not have permission to view this page.' 
+              : error}
+          </p>
           <button 
             onClick={() => window.location.reload()}
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl mb-3"
           >
             <RefreshCw className="w-5 h-5 inline mr-2" />
             Try Again
+          </button>
+          <button 
+            onClick={() => navigate('/')}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-2xl transition-all duration-300"
+          >
+            Back to Home
           </button>
         </div>
       </div>
@@ -107,7 +206,7 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <div className="relative bg-white/70 backdrop-blur-md border-b border-orange-200/50 sticky top-0 z-50">
+      <div className="bg-white/70 backdrop-blur-md border-b border-orange-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2">

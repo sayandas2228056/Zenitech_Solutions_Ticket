@@ -38,6 +38,11 @@ const ticketSchema = new mongoose.Schema({
     enum: ["Open", "In Progress", "Closed"],
     default: "Open" 
   },
+  userId: {
+    type: String,
+    required: true,
+    index: true
+  },
   createdAt: { 
     type: Date, 
     default: Date.now 

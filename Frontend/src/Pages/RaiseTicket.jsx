@@ -70,58 +70,85 @@ const RaiseTicket = () => {
     if (Object.keys(newErrors).length === 0) {
       try {
         setLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('NO_TOKEN');
+        }
+
         const res = await fetch("http://localhost:3000/api/tickets", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            ...formData,
+            // Include any additional fields required by the backend
+          }),
         });
 
         const data = await res.json();
-        if (res.ok) {
-          // Show success toast with token
-          toast.success(
-            <div>
-              <p className="font-semibold">Ticket Submitted Successfully!</p>
-              <p className="text-sm">Your Token: <span className="font-bold">{data.ticket.token}</span></p>
-            </div>,
-            {
-              duration: 5000,
-              position: 'top-center',
-              style: {
-                background: '#10B981',
-                color: '#fff',
-                padding: '16px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              },
-              iconTheme: {
-                primary: '#fff',
-                secondary: '#059669',
-              },
-            }
-          );
-          
-          // Reset form
-          setFormData({
-            name: '',
-            phone: '',
-            email: '',
-            subject: '',
-            description: ''
-          });
-          
-          // Redirect to dashboard after 3 seconds
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 3000);
-          
-        } else {
-          throw new Error(data.error || 'Failed to submit ticket');
+        
+        if (!res.ok) {
+          // Handle specific error cases
+          if (res.status === 401) {
+            // Token expired or invalid, redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login', { state: { from: '/raise-ticket' } });
+            throw new Error('Your session has expired. Please log in again.');
+          }
+          throw new Error(data.message || 'Failed to submit ticket');
         }
+
+        // Show success toast with token
+        toast.success(
+          <div>
+            <p className="font-semibold">Ticket Submitted Successfully!</p>
+            <p className="text-sm">Your Token: <span className="font-bold">{data.ticket?.token || data.token || 'N/A'}</span></p>
+          </div>,
+          {
+            duration: 5000,
+            position: 'top-center',
+            style: {
+              background: '#10B981',
+              color: '#fff',
+              padding: '16px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#059669',
+            },
+          }
+        );
+        
+        // Reset form
+        setFormData({
+          name: '',
+          phone: '',
+          email: '',
+          subject: '',
+          description: ''
+        });
+        
+        // Set a flag to refresh tickets when returning to dashboard
+        sessionStorage.setItem('shouldRefreshTickets', 'true');
+        
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => {
+          navigate('/dashboard', { state: { shouldRefresh: true } });
+        }, 3000);
       } catch (err) {
-        console.error(err);
+        console.error('Error submitting ticket:', err);
+        const errorMessage = err.message === 'NO_TOKEN' 
+          ? 'You need to be logged in to submit a ticket' 
+          : err.message || 'Something went wrong while submitting ticket';
+          
         toast.error(
-          `❌ ${err.message || 'Something went wrong while submitting ticket'}`,
+          `❌ ${errorMessage}`,
           {
             duration: 4000,
             position: 'top-center',
