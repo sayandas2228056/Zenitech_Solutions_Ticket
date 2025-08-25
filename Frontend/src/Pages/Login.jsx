@@ -86,7 +86,7 @@ const Login = () => {
           <div className="text-center mb-8">
             <a href="/">
               <h1 className="text-3xl font-bold mb-2">
-                <span className='text-orange-500'>Zenitech</span> <span className='text-b'>Solutions</span>
+                <span className='text-orange-500'>Zenitech</span> <span className='text-blue-600'>Solutions</span>
               </h1>
             </a>
             <h2 className="text-4xl text-[#92400e] font-semibold">Welcome Back</h2>

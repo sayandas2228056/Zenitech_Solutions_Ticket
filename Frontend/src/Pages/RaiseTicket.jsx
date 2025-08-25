@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, User, Phone, Mail, FileText, MessageSquare } from 'lucide-react';
 import BgImg from "../assets/Images/Pic1.jpg";
+import { useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 const RaiseTicket = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -75,7 +78,29 @@ const RaiseTicket = () => {
 
         const data = await res.json();
         if (res.ok) {
-          alert(`✅ Ticket submitted successfully! Your Token: ${data.ticket.token}`);
+          // Show success toast with token
+          toast.success(
+            <div>
+              <p className="font-semibold">Ticket Submitted Successfully!</p>
+              <p className="text-sm">Your Token: <span className="font-bold">{data.ticket.token}</span></p>
+            </div>,
+            {
+              duration: 5000,
+              position: 'top-center',
+              style: {
+                background: '#10B981',
+                color: '#fff',
+                padding: '16px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              },
+              iconTheme: {
+                primary: '#fff',
+                secondary: '#059669',
+              },
+            }
+          );
+          
           // Reset form
           setFormData({
             name: '',
@@ -84,30 +109,62 @@ const RaiseTicket = () => {
             subject: '',
             description: ''
           });
+          
+          // Redirect to dashboard after 3 seconds
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 3000);
+          
         } else {
-          alert(`❌ Failed to submit ticket: ${data.error || "Unknown error"}`);
+          throw new Error(data.error || 'Failed to submit ticket');
         }
       } catch (err) {
         console.error(err);
-        alert("❌ Something went wrong while submitting ticket");
+        toast.error(
+          `❌ ${err.message || 'Something went wrong while submitting ticket'}`,
+          {
+            duration: 4000,
+            position: 'top-center',
+            style: {
+              background: '#EF4444',
+              color: '#fff',
+              padding: '16px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+          }
+        );
       } finally {
         setLoading(false);
       }
     } else {
       setErrors(newErrors);
+      // Show error toast for form validation
+      toast.error(
+        'Please fill in all required fields correctly',
+        {
+          duration: 3000,
+          position: 'top-center',
+          style: {
+            background: '#F59E0B',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '12px',
+          },
+        }
+      );
     }
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 relative"
+    <div className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
         backgroundImage: `url(${BgImg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-      }}
-    >
+      }}>
+      <Toaster />
       <div className="w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-8">

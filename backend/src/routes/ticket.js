@@ -39,4 +39,41 @@ router.get("/", async (req, res) => {
   }
 });
 
+// PATCH → Update Ticket Status
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status || !['Open', 'In Progress', 'Closed'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'Invalid status' });
+    }
+
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: 'Ticket not found' });
+    }
+
+    res.json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE → Delete a Ticket
+router.delete("/:id", async (req, res) => {
+  try {
+    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: 'Ticket not found' });
+    }
+    res.json({ success: true, message: 'Ticket deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
