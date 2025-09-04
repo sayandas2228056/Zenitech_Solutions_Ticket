@@ -140,12 +140,22 @@ router.patch("/:id/status", checkRole(['admin', 'support']), async (req, res) =>
 });
 
 // DELETE → Delete a Ticket
-router.delete("/:id", checkRole(['admin', 'support']), async (req, res) => {
+router.delete("/:id", checkRole(['admin', 'support', 'user']), async (req, res) => {
   try {
-    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+    const ticket = await Ticket.findById(req.params.id);
+    
     if (!ticket) {
       return res.status(404).json({ success: false, error: 'Ticket not found' });
     }
+    
+    const userId = req.user.userId || req.user._id;
+    
+    // Allow delete if user is admin/support OR if user is the ticket owner
+    if (req.user.role === 'user' && ticket.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, error: 'Not authorized to delete this ticket' });
+    }
+    
+    await Ticket.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Ticket deleted successfully' });
   } catch (err) {
     console.error('Error deleting ticket:', err);
