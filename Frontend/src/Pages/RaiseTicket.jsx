@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Send, User, Phone, Mail, FileText, MessageSquare } from 'lucide-react';
+import { Send, User, Phone, Mail, FileText, MessageSquare, Image as ImageIcon, X } from 'lucide-react';
 import BgImg from "../assets/Images/Pic1.jpg";
 import { useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 
 const RaiseTicket = () => {
@@ -13,9 +14,40 @@ const RaiseTicket = () => {
     subject: '',
     description: ''
   });
+  
+  const [attachment, setAttachment] = useState(null);
+  const [preview, setPreview] = useState('');
+  const fileInputRef = useRef(null);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error(`File size should be less than 10MB (current: ${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+      return;
+    }
+
+    setAttachment(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAttachment = () => {
+    setAttachment(null);
+    setPreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,29 +102,36 @@ const RaiseTicket = () => {
     if (Object.keys(newErrors).length === 0) {
       try {
         setLoading(true);
+        const formDataToSend = new FormData();
+        
+        // Append all form fields
+        Object.entries(formData).forEach(([key, value]) => {
+          formDataToSend.append(key, value);
+        });
+        
+        // Append the file if it exists
+        if (attachment) {
+          formDataToSend.append('attachment', attachment);
+        }
+        
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('NO_TOKEN');
         }
 
-        const res = await fetch("http://localhost:3000/api/tickets", {
+        const response = await fetch("http://localhost:3000/api/tickets", {
           method: "POST",
           headers: { 
-            "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          credentials: 'include',
-          body: JSON.stringify({
-            ...formData,
-            // Include any additional fields required by the backend
-          }),
+          body: formDataToSend
         });
 
-        const data = await res.json();
+        const data = await response.json();
         
-        if (!res.ok) {
+        if (!response.ok) {
           // Handle specific error cases
-          if (res.status === 401) {
+          if (response.status === 401) {
             // Token expired or invalid, redirect to login
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -286,19 +325,76 @@ const RaiseTicket = () => {
           {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <MessageSquare className="inline w-4 h-4 mr-1" />
               Description <span className="text-red-500">*</span>
             </label>
             <textarea
+              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
               rows={5}
-              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 resize-vertical placeholder-gray-400 text-black ${
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 placeholder-gray-400 text-black ${
                 errors.description ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Please provide detailed information about your issue..."
-            />
+              placeholder="Please describe your issue in detail..."
+            ></textarea>
             {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+          </div>
+
+          {/* Attachment */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-100 mb-2">
+              <ImageIcon className="inline-block mr-2" size={18} />
+              Attach Screenshot (Optional)
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+                id="ticket-attachment"
+              />
+              <label
+                htmlFor="ticket-attachment"
+                className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                <ImageIcon size={18} />
+                {attachment ? 'Change File' : 'Choose File'}
+              </label>
+              {attachment && (
+                <div className="flex items-center gap-2 text-sm text-gray-300">
+                  <span className="truncate max-w-xs">{attachment.name}</span>
+                  <button
+                    type="button"
+                    onClick={removeAttachment}
+                    className="text-red-400 hover:text-red-300"
+                    title="Remove file"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
+            </p>
+            
+            {/* Image preview */}
+            {preview && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-300 mb-2">Preview:</p>
+                <div className="border border-gray-600 rounded-md p-2 max-w-xs">
+                  <img 
+                    src={preview} 
+                    alt="Attachment preview" 
+                    className="max-h-40 mx-auto"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

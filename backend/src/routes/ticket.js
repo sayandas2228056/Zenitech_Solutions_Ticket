@@ -1,7 +1,9 @@
 const express = require("express");
 const Ticket = require("../models/Ticket");
 const { sendTicketConfirmation } = require("../services/emailService");
+const { sendScreenshotEmail } = require("../services/screenshotService");
 const { authenticateToken, checkRole } = require("../middleware/auth");
+const upload = require("../utils/upload");
 const router = express.Router();
 
 // Apply authentication middleware to all routes
@@ -23,28 +25,89 @@ function generateToken() {
 }
 
 // POST → Create Ticket
-router.post("/", checkRole(['admin', 'support', 'user']), async (req, res) => {
+router.post("/", checkRole(['admin', 'support', 'user']), upload.single('attachment'), async (req, res) => {
   try {
     const token = generateToken();
     const userId = req.user.userId || req.user._id; // Handle both userId and _id
     
+    // Handle file upload if present
+    let attachmentInfo = null;
+    if (req.file) {
+      attachmentInfo = {
+        filename: req.file.originalname,
+        contentType: req.file.mimetype,
+        size: req.file.size,
+        buffer: req.file.buffer
+      };
+    }
+    
     console.log('Creating new ticket for user:', userId);
     console.log('Request body:', req.body);
     
-    const ticket = new Ticket({ 
+    // Prepare ticket data with required fields
+    const ticketData = {
       ...req.body,
       token,
-      userId: userId.toString() // Ensure userId is a string
+      userId: req.user?.userId || req.user?._id, // Ensure userId is set
+      status: 'Open', // Must match enum values: 'Open', 'In Progress', 'Closed'
+      priority: req.body.priority || 'medium',
+      attachments: []
+    };
+    
+    // Remove any undefined fields
+    Object.keys(ticketData).forEach(key => {
+      if (ticketData[key] === undefined) {
+        delete ticketData[key];
+      }
     });
     
-    console.log('New ticket data:', ticket);
+    // Add attachment info to ticket if file was uploaded
+    if (attachmentInfo) {
+      ticketData.attachments.push({
+        filename: attachmentInfo.filename,
+        contentType: attachmentInfo.contentType,
+        size: attachmentInfo.size,
+        path: 'email-only' // Indicates the file was sent via email, not stored
+      });
+    }
     
+    const ticket = new Ticket(ticketData);
     await ticket.save();
+    
+    // Generate email subject with ticket ID and subject
+    const emailSubject = `[TKT-${ticket._id}] ${req.body.subject || 'No Subject'}`;
     console.log('Ticket saved successfully:', ticket._id);
     
-    // Send email notification (don't await to avoid delaying the response)
+    // Prepare email data
+    const emailData = {
+      userEmail: req.body.email || req.user?.email,
+      userName: req.body.name || req.user?.name || 'User',
+      subject: req.body.subject || 'No Subject',
+      description: req.body.description || 'No description provided',
+      ticketId: ticket._id,
+      status: ticket.status
+    };
+    
+    // Send email with attachment if present
+    if (attachmentInfo) {
+      await sendScreenshotEmail(
+        emailData.userEmail,
+        emailData.userName,
+        emailData.description,
+        {
+          buffer: attachmentInfo.buffer,
+          mimetype: attachmentInfo.contentType,
+          originalname: attachmentInfo.filename
+        },
+        emailSubject
+      ).catch(err => {
+        console.error('Error sending email with attachment:', err);
+      });
+    }
+    
+    // Also send a confirmation email
     sendTicketConfirmation(ticket).catch(err => {
-      console.error('Error sending email:', err);
+      console.error('Error sending confirmation email:', err);
     });
     
     res.json({ 

@@ -8,6 +8,7 @@ const path = require('path');
 const authRoutes = require('./src/routes/auth');
 const profileRoutes = require('./src/routes/profile');
 const ticketRoutes = require('./src/routes/ticket');
+const screenshotRoutes = require('./src/routes/screenshot');
 const app = express();
 
 // CORS configuration
@@ -49,7 +50,8 @@ const connectWithRetry = async () => {
 
 connectWithRetry();
 
-app.use('/api/tickets',ticketRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/screenshot', screenshotRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Ticket, Clock, RefreshCw, Search, Filter, AlertCircle } from "lucide-react";
+import { Ticket, Clock, RefreshCw, Search, Filter, AlertCircle, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cards from "../Components/Cards";
+import ScreenshotUpload from "../Components/ScreenshotUpload";
 import { useAuth } from "../context/AuthContext";
 
 const Dashboard = () => {
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [showScreenshotModal, setShowScreenshotModal] = useState(false);
 
   const fetchTickets = async () => {
     if (!user) {
@@ -171,9 +173,17 @@ const Dashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center p-4">
         <div className="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-orange-200 max-w-md text-center">
           <div className="w-20 h-20 bg-gradient-to-r from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertCircle className="w-10 h-10 text-red-500" />
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Dashboard</h1>
+              <button
+                onClick={() => setShowScreenshotModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <Camera size={18} />
+                <span>Report an Issue</span>
+              </button>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Access Denied</h3>
           <p className="text-gray-600 mb-6 leading-relaxed">
             {error === 'Forbidden' 
               ? 'You do not have permission to view this page.' 
@@ -339,6 +349,21 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Screenshot Upload Modal */}
+      {showScreenshotModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl relative">
+            <button
+              onClick={() => setShowScreenshotModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+            <ScreenshotUpload onClose={() => setShowScreenshotModal(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
