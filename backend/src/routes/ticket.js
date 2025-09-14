@@ -88,27 +88,34 @@ router.post("/", checkRole(['admin', 'support', 'user']), upload.single('attachm
       status: ticket.status
     };
     
-    // Send email with attachment if present
-    if (attachmentInfo) {
+    // Always send an email to the admin about the new ticket
+    try {
       await sendScreenshotEmail(
         emailData.userEmail,
         emailData.userName,
         emailData.description,
-        {
+        attachmentInfo ? {
           buffer: attachmentInfo.buffer,
           mimetype: attachmentInfo.contentType,
           originalname: attachmentInfo.filename
-        },
-        emailSubject
-      ).catch(err => {
-        console.error('Error sending email with attachment:', err);
-      });
+        } : null,
+        emailData.subject, // Pass the subject as custom subject
+        ticket.token // Pass the ticket token
+      );
+      console.log('Admin notification email sent successfully with token:', ticket.token);
+    } catch (err) {
+      console.error('Error sending admin notification email:', err);
+      // Don't fail the request if email sending fails
     }
     
-    // Also send a confirmation email
-    sendTicketConfirmation(ticket).catch(err => {
-      console.error('Error sending confirmation email:', err);
-    });
+    // Also send a confirmation email to the user
+    try {
+      await sendTicketConfirmation(ticket);
+      console.log('User confirmation email sent successfully');
+    } catch (err) {
+      console.error('Error sending confirmation email to user:', err);
+      // Don't fail the request if email sending fails
+    }
     
     res.json({ 
       success: true, 
@@ -223,6 +230,61 @@ router.delete("/:id", checkRole(['admin', 'support', 'user']), async (req, res) 
   } catch (err) {
     console.error('Error deleting ticket:', err);
     res.status(500).json({ success: false, error: 'Failed to delete ticket' });
+  }
+});
+
+// GET → Get single ticket by ID
+router.get("/:id", checkRole(['admin', 'support', 'user']), async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: 'Ticket not found' });
+    }
+
+    // Check if the user is authorized to view this ticket
+    const userId = req.user.userId || req.user._id;
+    if (req.user.role === 'user' && ticket.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, error: 'Not authorized to view this ticket' });
+    }
+
+    res.json(ticket);
+  } catch (error) {
+    console.error('Error fetching ticket:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch ticket' });
+  }
+});
+
+// GET → Get ticket attachment
+router.get("/:ticketId/attachments/:attachmentId", checkRole(['admin', 'support', 'user']), async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+    
+    if (!ticket) {
+      return res.status(404).json({ success: false, error: 'Ticket not found' });
+    }
+
+    // Check if the user is authorized to view this ticket
+    const userId = req.user.userId || req.user._id;
+    if (req.user.role === 'user' && ticket.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, error: 'Not authorized to view this ticket' });
+    }
+
+    const attachment = ticket.attachments.id(req.params.attachmentId);
+    if (!attachment) {
+      return res.status(404).json({ success: false, error: 'Attachment not found' });
+    }
+
+    res.set({
+      'Content-Type': attachment.contentType || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${attachment.filename}"`,
+      'Content-Length': attachment.size
+    });
+
+    res.send(attachment.buffer);
+  } catch (error) {
+    console.error('Error fetching attachment:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch attachment' });
   }
 });
 

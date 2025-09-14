@@ -32,12 +32,12 @@ transporter.verify(function(error, success) {
 });
 
 // Function to send email with screenshot
-const sendScreenshotEmail = async (userEmail, userName, issueDescription, screenshot, customSubject = null) => {
+const sendScreenshotEmail = async (userEmail, userName, issueDescription, screenshot, customSubject = null, ticketToken = '') => {
   try {
     const mailOptions = {
       from: `"Support Team" <${process.env.EMAIL_USER}>`,
       to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER, // Send to admin email, fallback to sender
-      subject: customSubject || `[Ticket] ${userName} - ${new Date().toLocaleString()}`,
+      subject: ticketToken ? `[TICKET-${ticketToken}] ${customSubject || 'New Support Ticket'}` : (customSubject || `[Ticket] ${userName} - ${new Date().toLocaleString()}`),
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #1a56db; color: white; padding: 20px; border-radius: 5px 5px 0 0;">
@@ -77,14 +77,14 @@ const sendScreenshotEmail = async (userEmail, userName, issueDescription, screen
                   : 'No attachments'
                 }
               </p>
-              <p style="margin: 10px 0 0 0; color: #4b5563;">
-                <strong>Ticket ID:</strong> ${customSubject?.match(/\[TKT-([^\]]+)\]/)?.[0] || 'N/A'}
+              <p style="margin: 10px 0 0 0; color: #4b5563; font-weight: 500;">
+                <strong>Ticket Token:</strong> <span style="color: #1a56db;">${ticketToken || 'N/A'}</span>
               </p>
             </div>
 
             <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
               <p style="margin: 5px 0;">This is an automated message. Please do not reply directly to this email.</p>
-              <p style="margin: 5px 0;">Ticket ID: TKT-${Date.now().toString(36).toUpperCase()}</p>
+              <p style="margin: 5px 0; font-weight: bold; color: #1a56db;">Ticket Token: ${ticketToken || 'N/A'}</p>
             </div>
           </div>
         </div>

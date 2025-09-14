@@ -37,7 +37,7 @@ const Footer = () => {
           <h3 className="text-white font-semibold mb-4">Quick Links</h3>
           <ul className="space-y-2 text-gray-300">
             <li><a href="/dashboard" className="hover:text-orange-400">Dashboard</a></li>
-            <li><a href="/raise-token" className="hover:text-orange-400">Raise a Token</a></li>
+            <li><a href="/token" className="hover:text-orange-400">Raise a Token</a></li>
             <li><a href="/login" className="hover:text-orange-400">Sign In</a></li>
             <li><a href="/signup" className="hover:text-orange-400">Create New Account</a></li>
           </ul>
@@ -83,12 +83,9 @@ const Footer = () => {
           </p>
           <p className="text-center sm:text-right">
             Made by{' '}
-            <a
-              href="https://www.linkedin.com/in/sayan-das-b99810213/"
-              className="hover:text-orange-400"
-            >
-              <span className="text-orange-400 font-semibold">Sayan</span><span className="text-blue-400 font-semibold"> Das</span>
-            </a>
+           
+              <span className="text-orange-400 font-semibold">Zenitech </span><span className="text-blue-400 font-semibold">Solution</span>
+            
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React from "react";
-import { Ticket, User, Mail, Phone, Clock, Trash2, Eye, Calendar } from "lucide-react";
+import { Ticket, User, Mail, Phone, Clock, Trash2, Eye, Calendar, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Cards = ({ tickets, deletingId, onDelete }) => {
   const getStatusColor = (status) => {
@@ -128,16 +129,34 @@ const Cards = ({ tickets, deletingId, onDelete }) => {
 
             {/* Description */}
             <div className="bg-gradient-to-r from-gray-50 to-orange-50/50 rounded-2xl p-4 border border-gray-200">
-              <details className="group/details">
-                <summary className="cursor-pointer text-amber-800 font-semibold hover:text-orange-700 transition-colors duration-200 flex items-center gap-2 list-none">
-                  <Eye className="w-4 h-4" />
-                  <span>View Description</span>
-                  <span className="text-xs text-amber-600 group-open/details:hidden ml-auto">Click to expand</span>
-                </summary>
-                <div className="mt-4 p-4 bg-white/80 rounded-xl text-gray-700 text-sm leading-relaxed border border-orange-100">
-                  {ticket.description}
+              <div className="group/details">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-amber-800" />
+                  <Link 
+                    to={`/tickets/${ticket._id}`}
+                    className="text-amber-800 font-semibold hover:text-orange-700 transition-colors duration-200 flex items-center gap-2"
+                  >
+                    View Full Details
+                  </Link>
+                  <Link 
+                    to={`/tickets/${ticket._id}`}
+                    className="text-xs text-amber-600 hover:text-orange-700 ml-auto"
+                  >
+                    Click to expand
+                  </Link>
                 </div>
-              </details>
+                <div className="mt-2">
+                  <Link 
+                    to={`/tickets/${ticket._id}`}
+                    className="group flex items-center justify-between text-orange-600 hover:text-orange-700 transition-colors"
+                  >
+                    <p className="text-sm line-clamp-3">
+                      {ticket.description || 'No description provided'}
+                    </p>
+                    <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* Status Display and Actions */}

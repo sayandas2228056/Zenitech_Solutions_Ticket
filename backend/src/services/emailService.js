@@ -15,13 +15,13 @@ const sendTicketConfirmation = async (ticket) => {
         const mailOptions = {
             from: `"Support System" <${config.EMAIL_USER}>`,
             to: ticket.email, // Customer's email
-            cc: 'sayandas010124@gmail.com', // Your email as CC
+            //  // CC to admin
             subject: `[Ticket #${ticket.token}] Support Ticket Created`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #2563eb;">Support Ticket Created Successfully</h2>
                     <p>Hello ${ticket.name},</p>
-                    <p>Thank you for reaching out to our support team. We've received your request and a ticket has been created.</p>
+                    <p>Thank you for reaching out to our support team. We've received your request and a ticket has been created. A copy of this ticket has been sent to our support team for review.</p>
                     
                     <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
                         <h3 style="margin-top: 0; color: #1f2937;">Ticket Details</h3>

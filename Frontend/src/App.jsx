@@ -11,6 +11,7 @@ import Profile from './Pages/Profile'
 import ForgotPassword from './Pages/ForgotPassword'
 import Footer from './Components/Footer'
 import RaiseTicket from './Pages/RaiseTicket'
+import TicketDetails from './Pages/TicketDetails'
 function App() {
   return (
     <AuthProvider>
@@ -43,6 +44,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RaiseTicket />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id"
+              element={
+                <ProtectedRoute>
+                  <TicketDetails />
                 </ProtectedRoute>
               }
             />

@@ -41,6 +41,9 @@ router.get('/me', auth, async (req, res) => {
 // Update user profile
 router.put('/update', auth, async (req, res) => {
   try {
+    console.log('Received update request with body:', JSON.stringify(req.body, null, 2));
+    console.log('Current user ID:', req.user._id);
+    
     const {
       name,
       email,
@@ -51,6 +54,8 @@ router.put('/update', auth, async (req, res) => {
       socialLinks,
       preferences
     } = req.body;
+    
+    console.log('Parsed socialLinks:', JSON.stringify(socialLinks, null, 2));
 
     // Check if email is being changed and if it's already taken
     if (email && email !== req.user.email) {
@@ -62,13 +67,37 @@ router.put('/update', auth, async (req, res) => {
     }
 
     // Update other fields if provided
+    console.log('Current user data before update:', {
+      name: req.user.name,
+      email: req.user.email,
+      socialLinks: req.user.socialLinks
+    });
+    
     if (name) req.user.name = name;
     if (bio !== undefined) req.user.bio = bio;
     if (location !== undefined) req.user.location = location;
     if (website !== undefined) req.user.website = website;
     if (profilePicture !== undefined) req.user.profilePicture = profilePicture;
-    if (socialLinks) req.user.socialLinks = { ...req.user.socialLinks, ...socialLinks };
-    if (preferences) req.user.preferences = { ...req.user.preferences, ...preferences };
+    
+    // Handle social links update
+    if (socialLinks) {
+      console.log('Merging social links:', {
+        existing: req.user.socialLinks,
+        new: socialLinks,
+        merged: { ...(req.user.socialLinks || {}), ...socialLinks }
+      });
+      req.user.socialLinks = { ...(req.user.socialLinks || {}), ...socialLinks };
+    }
+    
+    if (preferences) {
+      req.user.preferences = { ...(req.user.preferences || {}), ...preferences };
+    }
+    
+    console.log('User data after update:', {
+      name: req.user.name,
+      email: req.user.email,
+      socialLinks: req.user.socialLinks
+    });
 
     await req.user.save();
 

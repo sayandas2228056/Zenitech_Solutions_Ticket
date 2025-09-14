@@ -20,7 +20,8 @@ const corsOptions = {
     'Authorization', 
     'X-Requested-With', 
     'Accept',
-    'X-User-Id'  // Add this line to allow the x-user-id header
+    'X-User-Id',
+    'X-Debug'  // Add this line to allow the X-Debug header
   ],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true,
